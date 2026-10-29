@@ -170,7 +170,7 @@ body.proy .tgw,body.proy .main,body.proy .sim{transition:opacity .4s}
   <div class="row"><span class="fl">Mensual</span><input class="inp" id="prM" inputmode="decimal" style="width:110px;letter-spacing:0"></div>
   <div class="row"><span class="fl">Anual</span><input class="inp" id="prA" inputmode="decimal" style="width:110px;letter-spacing:0"></div>
   <div class="row"><span class="fl">Aula / Centro</span><input class="inp" id="prC" inputmode="decimal" style="width:110px;letter-spacing:0"></div>
-  <button class="gb" id="adSave">Guardar precios</button><div class="fh" style="margin:6px 0 14px">Los precios se guardan en este dispositivo. Para fijarlos a todos tus clientes, cámbialos en el archivo.</div>
+  <button class="gb" id="adSave">Guardar precios</button><div class="fh" id="adSync" style="margin:6px 0 8px"></div><button class="gb" id="adMk" style="display:none">☁️ Crear almacén compartido</button><div style="height:12px"></div>
   <div class="fl" style="margin-bottom:6px">Generar código de activación</div>
   <select class="inp" id="adPl" style="letter-spacing:0"><option value="M">Mensual (31 días)</option><option value="A" selected>Anual (1 año)</option><option value="C">Aula / Centro (1 año)</option></select>
   <button class="pb" id="adGen">🔑 Generar código</button>
@@ -251,13 +251,33 @@ $("#bPrem").onclick=()=>{waLink();open("#oPrem")};
 const WA="51972768061",SECRET="ms-cambia-esta-clave",DAYS={M:31,A:366,C:366},PN={M:"Mensual",A:"Anual",C:"Aula / Centro"};
 const hs=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return(h>>>0).toString(36).toUpperCase().padStart(5,"0").slice(-5)};
 function down(){st.prem=false;st.exp=0;st.plan="";if(SKINS[st.skin][2])st.skin="turq";if(SCENES[st.scene][3])st.scene="noche";if(SND[st.snd]&&SND[st.snd][2]){st.snd="";play("")}st.pin="";$("#pin").value=""}
-const DP={M:9.9,A:69.9,C:169},PR=()=>Object.assign({},DP,st.prices||{}),S=n=>"S/ "+(+n).toFixed(2).replace(/\.00$/,""),ADMIN="admin2026",AL="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+let SRV=null;const DP={M:9.9,A:69.9,C:169},PR=()=>Object.assign({},DP,SRV||st.srv||st.prices||{}),S=n=>"S/ "+(+n).toFixed(2).replace(/\.00$/,""),ADMIN="admin2026",AL="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 let selP="A",brandN=0,brandT;
 function renderPlans(){const P=PR(),b=$("#plans");b.innerHTML="";[["A","Anual","≈ "+S(P.A/12)+" al mes",1],["M","Mensual","Cancela cuando quieras"],["C","Aula / Centro","Licencia para todo el profesorado"]].forEach(([k,n,d,t])=>{const e=el("button","plan"+(selP===k?" sel":"")),l=el("span");l.append(el("b",0,n));if(t)l.append(el("span","tag","MEJOR PRECIO"));l.append(el("br"),el("small",0,d));e.append(l,el("b",0,S(P[k])+(k==="M"?"/mes":"/año")));e.onclick=()=>{selP=k;renderPlans()};b.append(e)});waLink()}
 function waLink(){$("#pWa").href="https://wa.me/"+WA+"?text="+encodeURIComponent("Hola, quiero activar el plan "+PN[selP]+" ("+S(PR()[selP])+") de El Monstruo Silencioso. ¿Cómo puedo pagar?")}
 $("#brand").onclick=()=>{brandN++;clearTimeout(brandT);brandT=setTimeout(()=>brandN=0,2000);if(brandN>=5){brandN=0;$("#adL").style.display="";$("#adM").style.display="none";$("#adP").value="";$("#adE").textContent="";open("#oAd")}};
-$("#adOk").onclick=()=>{if($("#adP").value===ADMIN){$("#adL").style.display="none";$("#adM").style.display="";["M","A","C"].forEach(k=>$("#pr"+k).value=PR()[k])}else $("#adE").textContent="Clave incorrecta"};
-$("#adSave").onclick=()=>{const p={};for(const k of["M","A","C"]){const v=parseFloat($("#pr"+k).value.replace(",","."));if(!(v>0)){toast("Precio no válido","Revisa "+PN[k]);return}p[k]=v}st.prices=p;save();renderPlans();toast("Precios guardados",S(p.M)+" · "+S(p.A)+" · "+S(p.C))};
+/* ===== precios compartidos (jsonblob.com) =====
+   BLOB = ID del almacén. Se crea una sola vez desde Admin → "Crear almacén compartido". */
+const BLOB="";
+const BURL=()=>"https://jsonblob.com/api/jsonBlob/"+BLOB,BH={"Content-Type":"application/json","Accept":"application/json"};
+const psig=p=>hs([p.M,p.A,p.C].join("|")+SECRET);
+const okP=d=>!!(d&&d.prices&&["M","A","C"].every(k=>d.prices[k]>0&&d.prices[k]<1e5)&&d.s===psig(d.prices));
+async function syncP(){if(!BLOB)return;try{const r=await fetch(BURL(),{headers:BH,cache:"no-store"});if(!r.ok)return;const d=await r.json();
+ if(okP(d)&&(!SRV||psig(d.prices)!==psig(SRV))){SRV=d.prices;st.srv=SRV;save();renderPlans()}}catch(e){}}
+$("#adOk").onclick=async()=>{if($("#adP").value!==ADMIN){$("#adE").textContent="Clave incorrecta";return}
+ await syncP();$("#adL").style.display="none";$("#adM").style.display="";["M","A","C"].forEach(k=>$("#pr"+k).value=PR()[k]);
+ $("#adSync").textContent=BLOB?"☁️ Almacén compartido activo: los precios se ven en todos los dispositivos en menos de un minuto.":"Aún no hay almacén compartido: los precios solo se guardan en este dispositivo.";$("#adMk").style.display=BLOB?"none":""};
+$("#adSave").onclick=async()=>{const p={};for(const k of["M","A","C"]){const v=parseFloat($("#pr"+k).value.replace(",","."));if(!(v>0)){toast("Precio no válido","Revisa "+PN[k]);return}p[k]=Math.round(v*100)/100}
+ if(!BLOB){st.prices=p;SRV=null;st.srv=null;save();renderPlans();toast("Guardado solo en este dispositivo","Crea el almacén compartido para verlo en todos");return}
+ try{const r=await fetch(BURL(),{method:"PUT",headers:BH,body:JSON.stringify({prices:p,s:psig(p),t:Date.now()})});if(!r.ok)throw 0;
+  SRV=p;st.srv=p;save();renderPlans();toast("Precios actualizados para todos",S(p.M)+" · "+S(p.A)+" · "+S(p.C))}catch(e){toast("No se pudo guardar para todos","Revisa tu conexión e inténtalo de nuevo")}};
+$("#adMk").onclick=async()=>{const o=$("#adSync");o.textContent="Creando…";
+ try{const p=PR(),r=await fetch("https://jsonblob.com/api/jsonBlob",{method:"POST",headers:BH,body:JSON.stringify({prices:p,s:psig(p),t:Date.now()})});
+  const id=(r.headers.get("Location")||r.headers.get("X-jsonblob")||"").split("/").pop();
+  if(r.ok&&id){o.textContent="";o.append("Tu ID: ",el("b",0,id),". Pégalo en const BLOB=\"\" dentro del archivo y vuelve a subirlo.")}
+  else o.textContent="Créalo a mano: entra a jsonblob.com, crea un JSON cualquiera y copia el ID que aparece al final de la dirección (…/jsonBlob/ID)."}
+ catch(e){o.textContent="Sin conexión. Inténtalo de nuevo."}};
+syncP();setInterval(syncP,60000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncP()});
 $("#adGen").onclick=()=>{const p=$("#adPl").value;let r="";for(let i=0;i<5;i++)r+=AL[Math.floor(Math.random()*AL.length)];$("#adOut").textContent="MS-"+p+"-"+r+"-"+hs(p+r+SECRET)};
 $("#adCopy").onclick=()=>{try{navigator.clipboard.writeText($("#adOut").textContent);toast("Copiado","Pégalo en WhatsApp")}catch(e){}};
 $("#adClose").onclick=()=>close("#oAd");
