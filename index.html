@@ -104,43 +104,68 @@ body.proy.hide .tgw,body.proy.hide .main,body.proy.hide .sim{opacity:0;pointer-e
 body.proy.hide #bExit{opacity:0;pointer-events:none}
 body.proy.hide{cursor:none}
 body.proy .tgw,body.proy .main,body.proy .sim{transition:opacity .4s}
-/* ===== Responsivo: celular chico, horizontal, tablet, laptop, TV ===== */
-body{overflow-x:hidden;min-height:100vh;min-height:100dvh;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+/* ===== Responsivo v2: celular, horizontal, tablet, laptop, TV ===== */
+:root{--z:1;--W:calc(100vw / var(--z));--H:calc(100dvh / var(--z))}
+body{overflow-x:hidden;min-height:100vh;min-height:var(--H);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 .app{width:100%}
-.acts{flex-wrap:wrap;justify-content:flex-end}
-.ib{width:44px;height:44px}.pill{min-height:44px}
+.top{gap:6px}.acts{flex-wrap:wrap;justify-content:flex-end;gap:6px}.pill{white-space:nowrap}
+.ib{width:44px;height:44px}.pill{min-height:44px}.brand{min-height:44px;display:flex;align-items:center;gap:6px}
 .stats{flex-wrap:wrap}.banner input{max-width:100%;min-width:0}
-body:not(.proy) .brand{font-size:clamp(15px,.5vw + 12px,22px)}
-body:not(.proy) .ringw{width:clamp(180px,66vw,320px);height:clamp(180px,66vw,320px)}
-body.aula:not(.proy) .ringw{width:clamp(200px,78vw,420px);height:clamp(200px,78vw,420px)}
+.tgw,.nc{container-type:inline-size}
+.toast{width:max-content;max-width:min(88vw,34rem);bottom:calc(22px + env(safe-area-inset-bottom,0px));transition:transform .4s cubic-bezier(.4,1.5,.5,1),opacity .3s,visibility .4s}
+.toast:not(.show){opacity:0;visibility:hidden;pointer-events:none}.toast.show{opacity:1;visibility:visible}
+.ov{align-items:flex-end}
+.md{max-height:92vh;max-height:calc(var(--H)*.92);padding-bottom:calc(26px + env(safe-area-inset-bottom,0px))}
+/* --- una columna: celular y tablet vertical --- */
+body:not(.proy) .app{max-width:min(100%,clamp(480px,calc(var(--W)*.92),860px))}
+body.aula:not(.proy) .app{max-width:min(100%,clamp(480px,calc(var(--W)*.94),920px))}
+body:not(.proy) .ringw{width:clamp(180px,min(calc(var(--W)*.7),calc(var(--H)*.44)),600px);height:clamp(180px,min(calc(var(--W)*.7),calc(var(--H)*.44)),600px)}
+body.aula:not(.proy) .ringw{width:clamp(200px,min(calc(var(--W)*.74),calc(var(--H)*.48)),600px);height:clamp(200px,min(calc(var(--W)*.74),calc(var(--H)*.48)),600px)}
 body:not(.proy) .monster{width:73%;height:73%}
+body:not(.proy) .brand{font-size:clamp(15px,.5vw + 12px,22px)}
 body:not(.proy) #lbl{font-size:clamp(20px,1.6vw + 14px,38px)}body.aula:not(.proy) #lbl{font-size:clamp(26px,2.4vw + 14px,56px)}
 body:not(.proy) #sub{font-size:clamp(13px,.7vw + 10px,22px)}body.aula:not(.proy) #sub{font-size:clamp(15px,.9vw + 11px,26px)}
 body:not(.proy) #tm{font-size:clamp(15px,.8vw + 11px,26px)}body.aula:not(.proy) #tm{font-size:clamp(22px,1.2vw + 14px,40px)}
 body:not(.proy) .leg span{font-size:clamp(11px,.4vw + 9px,16px)}
 body:not(.proy) .st{font-size:clamp(12.5px,.3vw + 11px,15px)}
-body:not(.proy) .chip{font-size:clamp(13px,.4vw + 11px,17px)}body:not(.proy) .chip i{font-size:clamp(18px,.8vw + 13px,26px)}
-body:not(.proy) .main{font-size:clamp(18px,.8vw + 14px,26px);padding:clamp(15px,1.4vw,24px)}body.aula:not(.proy) .main{font-size:clamp(22px,1vw + 16px,32px);padding:clamp(18px,1.8vw,28px)}
 body:not(.proy) .note{font-size:clamp(12px,.3vw + 10.5px,15px)}
-.ov{align-items:flex-end}
-.md{max-height:92vh;max-height:92dvh;padding-bottom:calc(26px + env(safe-area-inset-bottom,0px))}
-.toast{bottom:calc(22px + env(safe-area-inset-bottom,0px))}
-@media (min-width:700px){.ov{align-items:center}.md{border-radius:26px;max-width:clamp(480px,46vw,640px);padding-bottom:26px}}
-@media (max-height:480px){body:not(.proy) .app{padding-top:8px;padding-bottom:14px;gap:8px}body:not(.proy) .stage{padding:10px}}
-/* tablet, laptop, TV y celular en horizontal: dos columnas (monstruo | controles) */
-@media (min-width:760px),(orientation:landscape) and (min-width:560px){
- body:not(.proy) .app{max-width:min(100%,clamp(1180px,78vw,1800px));display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:clamp(14px,2.4vw,36px);row-gap:12px;align-items:start;padding-inline:clamp(14px,2.4vw,32px)}
+body:not(.proy) .main{font-size:clamp(18px,.8vw + 14px,26px);padding:clamp(15px,1.4vw,24px)}body.aula:not(.proy) .main{font-size:clamp(22px,1vw + 16px,32px);padding:clamp(18px,1.8vw,28px)}
+/* botones de tiempo / monstruo / escenario: se reparten parejo y las filas incompletas se centran */
+body:not(.proy) .grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;--g:8px;--c:3}
+body:not(.proy) .grid>.chip{flex:0 0 calc((100% - (var(--c) - 1)*var(--g))/var(--c));min-width:0;font-size:clamp(12.5px,.35vw + 11px,16px)}
+body:not(.proy) .grid>.chip i{font-size:clamp(18px,.8vw + 13px,26px)}
+body:not(.proy) .nc .grid{--c:2}
+body:not(.proy) .nc .grid:has(>:nth-child(5)){--c:3}
+@container (min-width:360px){body:not(.proy) .tgw .grid{--c:6}}
+@container (min-width:380px){body:not(.proy) .nc .grid:has(>:nth-child(5)){--c:5}}
+@container (min-width:300px){body:not(.proy) .nc .grid:not(:has(>:nth-child(5))){--c:4}}
+/* celular y tablet vertical: Comenzar siempre a la mano */
+@media (max-width:559px),(max-aspect-ratio:99/100){body:not(.proy) .app>.main{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:6}}
+/* celular: cabecera compacta en una sola fila */
+@media (max-width:559px){body:not(.proy) .app{padding-inline:10px}.top{flex-wrap:nowrap}.brand{font-size:0!important;gap:0;min-width:34px}.brand::before{content:"🧌";font-size:26px;line-height:1}
+ .ib{width:36px;height:36px;border-radius:11px;font-size:15px}.pill{padding:7px 9px;font-size:12px;min-height:36px}.acts{gap:4px;flex-wrap:nowrap}}
+@media (max-width:359px){#bPrem{font-size:0;padding:7px 10px}#bPrem::before{content:"✨";font-size:15px}}
+@media (max-width:339px){.top{flex-wrap:wrap}.acts{flex-wrap:wrap}}
+/* ventanas anchas y bajas: tablet/laptop/TV horizontal y celular de lado: dos columnas */
+@media (min-aspect-ratio:1/1) and (min-width:560px){
+ body:not(.proy) .app{max-width:min(100%,clamp(1180px,calc(var(--W)*.78),1800px));display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:clamp(14px,2.4vw,36px);row-gap:12px;align-items:start;padding-inline:clamp(14px,2.4vw,32px)}
  body:not(.proy) .app>*{grid-column:2}
  body:not(.proy) .app>.top{grid-column:1/-1;order:-5}
  body:not(.proy) .app>.banner{grid-column:1/-1;order:-4}
- body:not(.proy) .app>.stage{grid-column:1;grid-row:2/span 9}
+ body:not(.proy) .app>.stage{grid-column:1;grid-row:2/span 9;position:sticky;top:12px}
  body.aula:not(.proy) .app>.stage{grid-row:3/span 9}
  body:not(.proy) .app>.main{order:-2}
  body:not(.proy) .app>.sim{order:-1}
  body:not(.proy) .app>.note{order:9}
- body:not(.proy) .ringw,body.aula:not(.proy) .ringw{width:clamp(150px,min(36vw,100vh - 230px),560px);height:clamp(150px,min(36vw,100vh - 230px),560px)}
+ body:not(.proy) .ringw,body.aula:not(.proy) .ringw{width:clamp(150px,min(calc(var(--W)*.36),calc(var(--H) - 230px)),560px);height:clamp(150px,min(calc(var(--W)*.36),calc(var(--H) - 230px)),560px)}
 }
-@media (min-width:760px) and (min-height:700px){body:not(.proy) .app>.stage{position:sticky;top:12px}}
+@media (min-aspect-ratio:1/1) and (max-height:480px){body:not(.proy) .app{padding-top:8px;padding-bottom:14px;row-gap:8px}body:not(.proy) .stage{padding:10px;gap:4px}body:not(.proy) .leg,body:not(.proy) .deco{display:none}
+ body:not(.proy) .ringw,body.aula:not(.proy) .ringw{width:clamp(120px,calc(var(--H) - 150px),320px);height:clamp(120px,calc(var(--H) - 150px),320px)}}
+@media (min-width:700px){.ov{align-items:center}.md{border-radius:26px;max-width:clamp(480px,46vw,640px);padding-bottom:26px}}
+/* pantallas grandes: se escala toda la interfaz */
+@media (min-width:1700px) and (min-height:900px){html:not(:has(body.proy)){zoom:1.2;--z:1.2}}
+@media (min-width:2200px) and (min-height:1200px){html:not(:has(body.proy)){zoom:1.6;--z:1.6}}
+@media (min-width:3000px) and (min-height:1800px){html:not(:has(body.proy)){zoom:2.3;--z:2.3}}
 @media (prefers-reduced-motion:reduce){.monster:not([data-s=demasiado]){animation:none}.toast,.lid,.arm,.mouth{transition-duration:.01s}}
 </style></head>
 <body data-theme="light" data-scene="noche">
