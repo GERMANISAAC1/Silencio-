@@ -104,7 +104,44 @@ body.proy.hide .tgw,body.proy.hide .main,body.proy.hide .sim{opacity:0;pointer-e
 body.proy.hide #bExit{opacity:0;pointer-events:none}
 body.proy.hide{cursor:none}
 body.proy .tgw,body.proy .main,body.proy .sim{transition:opacity .4s}
-@media (min-width:1100px){body.aula:not(.proy) .app{max-width:1100px}body.aula:not(.proy) .ringw{width:min(46vh,420px);height:min(46vh,420px)}body.aula:not(.proy) .monster{width:74%;height:74%}}
+/* ===== Responsivo: celular chico, horizontal, tablet, laptop, TV ===== */
+body{overflow-x:hidden;min-height:100vh;min-height:100dvh;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.app{width:100%}
+.acts{flex-wrap:wrap;justify-content:flex-end}
+.ib{width:44px;height:44px}.pill{min-height:44px}
+.stats{flex-wrap:wrap}.banner input{max-width:100%;min-width:0}
+body:not(.proy) .brand{font-size:clamp(15px,.5vw + 12px,22px)}
+body:not(.proy) .ringw{width:clamp(180px,66vw,320px);height:clamp(180px,66vw,320px)}
+body.aula:not(.proy) .ringw{width:clamp(200px,78vw,420px);height:clamp(200px,78vw,420px)}
+body:not(.proy) .monster{width:73%;height:73%}
+body:not(.proy) #lbl{font-size:clamp(20px,1.6vw + 14px,38px)}body.aula:not(.proy) #lbl{font-size:clamp(26px,2.4vw + 14px,56px)}
+body:not(.proy) #sub{font-size:clamp(13px,.7vw + 10px,22px)}body.aula:not(.proy) #sub{font-size:clamp(15px,.9vw + 11px,26px)}
+body:not(.proy) #tm{font-size:clamp(15px,.8vw + 11px,26px)}body.aula:not(.proy) #tm{font-size:clamp(22px,1.2vw + 14px,40px)}
+body:not(.proy) .leg span{font-size:clamp(11px,.4vw + 9px,16px)}
+body:not(.proy) .st{font-size:clamp(12.5px,.3vw + 11px,15px)}
+body:not(.proy) .chip{font-size:clamp(13px,.4vw + 11px,17px)}body:not(.proy) .chip i{font-size:clamp(18px,.8vw + 13px,26px)}
+body:not(.proy) .main{font-size:clamp(18px,.8vw + 14px,26px);padding:clamp(15px,1.4vw,24px)}body.aula:not(.proy) .main{font-size:clamp(22px,1vw + 16px,32px);padding:clamp(18px,1.8vw,28px)}
+body:not(.proy) .note{font-size:clamp(12px,.3vw + 10.5px,15px)}
+.ov{align-items:flex-end}
+.md{max-height:92vh;max-height:92dvh;padding-bottom:calc(26px + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.ov{align-items:center}.md{border-radius:26px;max-width:clamp(480px,46vw,640px);padding-bottom:26px}}
+@media (max-height:480px){body:not(.proy) .app{padding-top:8px;padding-bottom:14px;gap:8px}body:not(.proy) .stage{padding:10px}}
+/* tablet, laptop, TV y celular en horizontal: dos columnas (monstruo | controles) */
+@media (min-width:760px),(orientation:landscape) and (min-width:560px){
+ body:not(.proy) .app{max-width:min(100%,clamp(1180px,78vw,1800px));display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:clamp(14px,2.4vw,36px);row-gap:12px;align-items:start;padding-inline:clamp(14px,2.4vw,32px)}
+ body:not(.proy) .app>*{grid-column:2}
+ body:not(.proy) .app>.top{grid-column:1/-1;order:-5}
+ body:not(.proy) .app>.banner{grid-column:1/-1;order:-4}
+ body:not(.proy) .app>.stage{grid-column:1;grid-row:2/span 9}
+ body.aula:not(.proy) .app>.stage{grid-row:3/span 9}
+ body:not(.proy) .app>.main{order:-2}
+ body:not(.proy) .app>.sim{order:-1}
+ body:not(.proy) .app>.note{order:9}
+ body:not(.proy) .ringw,body.aula:not(.proy) .ringw{width:clamp(150px,min(36vw,100vh - 230px),560px);height:clamp(150px,min(36vw,100vh - 230px),560px)}
+}
+@media (min-width:760px) and (min-height:700px){body:not(.proy) .app>.stage{position:sticky;top:12px}}
+@media (prefers-reduced-motion:reduce){.monster:not([data-s=demasiado]){animation:none}.toast,.lid,.arm,.mouth{transition-duration:.01s}}
 </style></head>
 <body data-theme="light" data-scene="noche">
 <div class="app">
