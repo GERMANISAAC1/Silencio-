@@ -330,9 +330,10 @@ let selP="A",brandN=0,brandT;
 function renderPlans(){const P=PR(),b=$("#plans");b.innerHTML="";[["A","Anual","≈ "+S(P.A/12)+" al mes",1],["M","Mensual","Cancela cuando quieras"],["C","Aula / Centro","Licencia para todo el profesorado"]].forEach(([k,n,d,t])=>{const e=el("button","plan"+(selP===k?" sel":"")),l=el("span");l.append(el("b",0,n));if(t)l.append(el("span","tag","MEJOR PRECIO"));l.append(el("br"),el("small",0,d));e.append(l,el("b",0,S(P[k])+(k==="M"?"/mes":"/año")));e.onclick=()=>{selP=k;renderPlans()};b.append(e)});waLink()}
 function waLink(){$("#pWa").href="https://wa.me/"+WA+"?text="+encodeURIComponent("Hola, quiero activar el plan "+PN[selP]+" ("+S(PR()[selP])+") de El Monstruo Silencioso. ¿Cómo puedo pagar?")}
 $("#brand").onclick=()=>{brandN++;clearTimeout(brandT);brandT=setTimeout(()=>brandN=0,2000);if(brandN>=5){brandN=0;$("#adL").style.display="";$("#adM").style.display="none";$("#adP").value="";$("#adE").textContent="";open("#oAd")}};
-/* ===== precios compartidos (jsonblob.com) =====
-   BLOB (opcional): ID del almacén para que TODOS los equipos lo usen sin pasos extra.
-   También se puede crear y vincular desde Admin, o abrir el enlace de vinculación en otro equipo. */
+/* ===== precios compartidos =====
+   A) Con index.php (PHP / Termux: php -S 0.0.0.0:8080): se guardan en el propio servidor (precios.json). Sin pasos extra.
+   B) Con index.html en hosting estático: se guardan en jsonblob.com (se activa desde Admin). */
+const PHP_BUILD=false;
 const BLOB="";
 const mgGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},mgSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},mgDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
 const bid=()=>BLOB||mgGet("ms_blob")||"";
@@ -342,8 +343,15 @@ const okP=d=>!!(d&&d.prices&&["M","A","C"].every(k=>d.prices[k]>0&&d.prices[k]<1
 const cpTxt=async t=>{try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.append(a);a.select();try{document.execCommand("copy")}catch(x){}a.remove()}toast("Copiado","Pégalo donde lo necesites")};
 const baseUrl=()=>location.href.split("#")[0].split("?")[0];
 (function(){const m=/[#&]b=([A-Za-z0-9-]{8,64})/.exec(location.hash);if(m){mgSet("ms_blob",m[1]);try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}setTimeout(()=>toast("☁️ Equipo vinculado","Verás los precios compartidos"),700)}})();
-async function publish(p){const r=await fetch(BURL(),{method:"PUT",headers:BH,body:JSON.stringify({prices:p,s:psig(p),t:Date.now()})});if(!r.ok)throw new Error("net")}
-async function syncP(){if(!bid())return;try{const r=await fetch(BURL(),{headers:BH,cache:"no-store"});if(!r.ok)return;const d=await r.json();
+async function publish(p){const r=await fetch(BURL(),{method:"PUT",headers:BH,body:JSON.stringify({prices:p,s:psig(p),t:Date.now()})});if(!r.ok)throw new Error("HTTP "+r.status)}
+let MODE="",adKey="";
+const apiP=async b=>{const r=await fetch("?api=precios",b?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}:{cache:"no-store"});let j=null;try{j=await r.json()}catch(e){}return{s:r.status,j:j||{}}};
+function applyP(p){if(!p){if(SRV||st.srv){SRV=null;st.srv=null;save();renderPlans()}return}
+ if(["M","A","C"].every(k=>p[k]>0&&p[k]<1e5)&&(!SRV||SRV.M!==+p.M||SRV.A!==+p.A||SRV.C!==+p.C)){SRV={M:+p.M,A:+p.A,C:+p.C};st.srv=SRV;save();renderPlans()}}
+async function probe(){if(!PHP_BUILD)return false;try{const{j}=await apiP();if(j.ok&&j.srv===1){MODE="php";applyP(j.prices);return true}}catch(e){}MODE="";return false}
+async function syncP(){
+ if(PHP_BUILD){if(MODE!=="php"&&!(await probe()))return;try{const{j}=await apiP();if(j.ok&&j.srv===1)applyP(j.prices)}catch(e){}return}
+ if(!bid())return;try{const r=await fetch(BURL(),{headers:BH,cache:"no-store"});if(!r.ok)return;const d=await r.json();
  if(okP(d)&&(!SRV||psig(d.prices)!==psig(SRV))){SRV=d.prices;st.srv=SRV;save();renderPlans()}}catch(e){}}
 async function adopt(id){mgSet("ms_blob",id);SRV=null;st.srv=null;try{await publish(PR())}catch(e){}renderCloud();toast("☁️ Almacén activo","Copia el enlace para vincular tus otros equipos")}
 async function createBlob(){const o=$("#adSync");o.textContent="Creando…";
@@ -351,11 +359,12 @@ async function createBlob(){const o=$("#adSync");o.textContent="Creando…";
   const id=(r.headers.get("Location")||r.headers.get("X-jsonblob")||"").split("/").pop();
   if(r.ok&&/^[A-Za-z0-9-]{8,64}$/.test(id))adopt(id);
   else o.textContent="Tu navegador no dejó leer el ID. Abre jsonblob.com, pulsa Save y pega aquí la dirección que aparece."}
- catch(e){o.textContent="Sin conexión. Inténtalo de nuevo."}}
+ catch(e){o.textContent="No se pudo conectar con jsonblob.com ("+String(e&&e.message||e).slice(0,50)+"). Revisa tu internet; si sigue igual usa la versión index.php."}}
 async function bake(){try{const r=await fetch(baseUrl(),{cache:"no-store"});if(!r.ok)throw 0;let h=await r.text();if(!/const BLOB="[^"]*";/.test(h))throw 0;
  h=h.replace(/const BLOB="[^"]*";/,'const BLOB="'+bid()+'";');const u=URL.createObjectURL(new Blob([h],{type:"text/html"}));const a=document.createElement("a");a.href=u;a.download="index.html";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
  toast("Archivo listo","Reemplaza tu index.html por el descargado")}catch(e){toast("No se pudo generar","Ábrelo desde tu servidor (http) o pega el ID en const BLOB del archivo")}}
 function renderCloud(){const C=$("#adCloud"),o=$("#adSync"),id=bid();C.textContent="";
+ if(PHP_BUILD){o.textContent=MODE==="php"?"✅ Servidor propio activo: los precios se ven en todos los equipos que abran esta dirección en menos de un minuto.":"⚠️ No hay conexión con el servidor PHP.";return}
  const btn=(t,f)=>{const b=el("button","gb",t);b.style.marginTop="8px";b.onclick=f;C.append(b)};
  if(id){o.textContent="✅ Almacén activo ("+id.slice(0,6)+"…): los precios se ven en todos los equipos vinculados en menos de un minuto.";
   btn("🔗 Copiar enlace para vincular otro equipo",()=>cpTxt(baseUrl()+"#b="+id));
@@ -365,9 +374,17 @@ function renderCloud(){const C=$("#adCloud"),o=$("#adSync"),id=bid();C.textConte
   btn("☁️ Crear almacén automáticamente",createBlob);
   const i=el("input","inp");i.id="adBid";i.placeholder="…o pega aquí la dirección/ID de jsonblob.com";i.style.cssText="margin-top:8px;letter-spacing:0";C.append(i);
   btn("Vincular con esta dirección",()=>{const m=/([A-Za-z0-9-]{8,64})\/?(?:[?#].*)?$/.exec(i.value.trim());if(m)adopt(m[1]);else toast("Dirección no válida","Pega la dirección completa de jsonblob.com")})}}
-$("#adOk").onclick=async()=>{if($("#adP").value!==ADMIN){$("#adE").textContent="Clave incorrecta";return}
- await syncP();$("#adL").style.display="none";$("#adM").style.display="";["M","A","C"].forEach(k=>$("#pr"+k).value=PR()[k]);renderCloud()};
+$("#adOk").onclick=async()=>{const k=$("#adP").value,e=$("#adE");
+ if(PHP_BUILD){e.textContent="Verificando…";if(MODE!=="php")await probe();
+  if(MODE!=="php"){e.textContent="Sin conexión con el servidor. Abre la app desde tu servidor PHP.";return}
+  try{const{s,j}=await apiP({key:k,check:1});if(!j.ok){e.textContent=s===429?"Demasiados intentos. Espera unos minutos.":"Clave incorrecta";return}adKey=k;e.textContent=""}catch(x){e.textContent="Sin conexión con el servidor.";return}}
+ else if(k!==ADMIN){e.textContent="Clave incorrecta";return}
+ await syncP();$("#adL").style.display="none";$("#adM").style.display="";["M","A","C"].forEach(x=>$("#pr"+x).value=PR()[x]);renderCloud()};
 $("#adSave").onclick=async()=>{const p={};for(const k of["M","A","C"]){const v=parseFloat($("#pr"+k).value.replace(",","."));if(!(v>0)){toast("Precio no válido","Revisa "+PN[k]);return}p[k]=Math.round(v*100)/100}
+ if(PHP_BUILD){try{const{s,j}=await apiP({key:adKey,prices:p});
+   if(j.ok){SRV=p;st.srv=p;save();renderPlans();toast("Precios actualizados para todos",S(p.M)+" · "+S(p.A)+" · "+S(p.C))}
+   else toast("No se pudo guardar",j.error==="escritura"?"El servidor no puede escribir precios.json (revisa los permisos de la carpeta)":s===403?"Clave incorrecta o sesión vencida":"Revisa el precio")}
+  catch(e){toast("No se pudo guardar","Sin conexión con el servidor")}return}
  if(!bid()){st.prices=p;SRV=null;st.srv=null;save();renderPlans();toast("Guardado solo en este equipo","Crea el almacén compartido para verlo en todos");return}
  try{await publish(p);SRV=p;st.srv=p;save();renderPlans();toast("Precios actualizados para todos",S(p.M)+" · "+S(p.A)+" · "+S(p.C))}catch(e){toast("No se pudo guardar para todos","Revisa tu conexión e inténtalo de nuevo")}};
 syncP();setInterval(syncP,60000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncP()});
