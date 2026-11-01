@@ -27,7 +27,7 @@ body.aula #lbl{font-size:34px}body.aula #sub{font-size:16px}
 .ringw{position:relative;width:236px;height:236px}body.aula .ringw{width:350px;height:350px}
 .ringw>svg{width:100%;height:100%;transform:rotate(-90deg)}
 .tr{fill:none;stroke:var(--ring);stroke-width:12}.pg{fill:none;stroke:var(--mint);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .18s linear,stroke .4s}
-.slot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.slot{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center}
 .monster{width:172px;height:172px;animation:br 3.6s ease-in-out infinite;transition:transform .35s}body.aula .monster{width:255px;height:255px}
 .monster svg{width:100%;height:100%;overflow:visible}
 @keyframes br{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.015,.99)}}
@@ -58,7 +58,7 @@ body.aula .nc{display:none}
 .teams{display:none;flex-direction:column}body.aula .teams{display:flex}
 .th{display:flex;justify-content:space-between;align-items:center}.lb{border:0;background:none;color:var(--lav2);font-weight:800;font-size:12.5px;cursor:pointer}
 .tr2{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px}.tc{flex:0 0 auto;background:var(--card);box-shadow:var(--sh);border-radius:16px;padding:9px 14px;text-align:center;min-width:84px;font-weight:800;font-size:12.5px}.tc b{display:block;color:var(--gold);font-size:16px}
-.ov{position:fixed;inset:0;background:rgba(20,14,40,.5);display:none;align-items:flex-end;justify-content:center;z-index:50}.ov.show{display:flex}
+.ov{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(20,14,40,.5);display:none;align-items:flex-end;justify-content:center;z-index:50}.ov.show{display:flex}
 .md{background:var(--card);width:100%;max-width:480px;border-radius:26px 26px 0 0;padding:20px 18px 26px;max-height:86vh;overflow-y:auto}
 .md h3{margin:0 0 4px;font-size:20px}.md p{margin:2px 0 12px;color:var(--soft);font-size:13.5px;line-height:1.5}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.fl{font-weight:800;font-size:13.5px}.fh{font-size:11.5px;color:var(--soft)}
@@ -104,14 +104,16 @@ body.proy.hide .tgw,body.proy.hide .main,body.proy.hide .sim{opacity:0;pointer-e
 body.proy.hide #bExit{opacity:0;pointer-events:none}
 body.proy.hide{cursor:none}
 body.proy .tgw,body.proy .main,body.proy .sim{transition:opacity .4s}
+/* La capa responsiva solo se activa en navegadores con min()/clamp(); los antiguos usan el diseño base */
+@supports (width:min(1px,2px)){
 /* ===== Responsivo v2: celular, horizontal, tablet, laptop, TV ===== */
-:root{--z:1;--W:calc(100vw / var(--z));--H:calc(100dvh / var(--z))}
+:root{--z:1;--W:calc(100vw / var(--z));--H:calc(100vh / var(--z))}
+@supports (height:1dvh){:root{--H:calc(100dvh / var(--z))}}
 body{overflow-x:hidden;min-height:100vh;min-height:var(--H);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
 .app{width:100%}
 .top{gap:6px}.acts{flex-wrap:wrap;justify-content:flex-end;gap:6px}.pill{white-space:nowrap}
 .ib{width:44px;height:44px}.pill{min-height:44px}.brand{min-height:44px;display:flex;align-items:center;gap:6px}
 .stats{flex-wrap:wrap}.banner input{max-width:100%;min-width:0}
-.tgw,.nc{container-type:inline-size}
 .toast{width:max-content;max-width:min(88vw,34rem);bottom:calc(22px + env(safe-area-inset-bottom,0px));transition:transform .4s cubic-bezier(.4,1.5,.5,1),opacity .3s,visibility .4s}
 .toast:not(.show){opacity:0;visibility:hidden;pointer-events:none}.toast.show{opacity:1;visibility:visible}
 .ov{align-items:flex-end}
@@ -131,24 +133,21 @@ body:not(.proy) .st{font-size:clamp(12.5px,.3vw + 11px,15px)}
 body:not(.proy) .note{font-size:clamp(12px,.3vw + 10.5px,15px)}
 body:not(.proy) .main{font-size:clamp(18px,.8vw + 14px,26px);padding:clamp(15px,1.4vw,24px)}body.aula:not(.proy) .main{font-size:clamp(22px,1vw + 16px,32px);padding:clamp(18px,1.8vw,28px)}
 /* botones de tiempo / monstruo / escenario: se reparten parejo y las filas incompletas se centran */
-body:not(.proy) .grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;--g:8px;--c:3}
-body:not(.proy) .grid>.chip{flex:0 0 calc((100% - (var(--c) - 1)*var(--g))/var(--c));min-width:0;font-size:clamp(12.5px,.35vw + 11px,16px)}
+body:not(.proy) #tg,body:not(.proy) #skins,body:not(.proy) #scenes{display:flex;flex-wrap:wrap;justify-content:center;--c:3}
+body:not(.proy) #scenes{--c:2}
+body:not(.proy) #tg>.chip,body:not(.proy) #skins>.chip,body:not(.proy) #scenes>.chip{flex:0 0 calc(100%/var(--c) - 9px);max-width:calc(100%/var(--c) - 9px);min-width:0;margin:4px}
+body:not(.proy) .grid>.chip{font-size:clamp(12.5px,.35vw + 11px,16px)}
 body:not(.proy) .grid>.chip i{font-size:clamp(18px,.8vw + 13px,26px)}
-body:not(.proy) .nc .grid{--c:2}
-body:not(.proy) .nc .grid:has(>:nth-child(5)){--c:3}
-@container (min-width:360px){body:not(.proy) .tgw .grid{--c:6}}
-@container (min-width:380px){body:not(.proy) .nc .grid:has(>:nth-child(5)){--c:5}}
-@container (min-width:300px){body:not(.proy) .nc .grid:not(:has(>:nth-child(5))){--c:4}}
 /* celular y tablet vertical: Comenzar siempre a la mano */
 @media (max-width:559px),(max-aspect-ratio:99/100){body:not(.proy) .app>.main{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:6}}
 /* celular: cabecera compacta en una sola fila */
-@media (max-width:559px){body:not(.proy) .app{padding-inline:10px}.top{flex-wrap:nowrap}.brand{font-size:0!important;gap:0;min-width:34px}.brand::before{content:"🧌";font-size:26px;line-height:1}
+@media (max-width:559px){body:not(.proy) .app{padding-left:10px;padding-right:10px}.top{flex-wrap:nowrap}.brand{font-size:0!important;gap:0;min-width:34px}.brand::before{content:"🧌";font-size:26px;line-height:1}
  .ib{width:36px;height:36px;border-radius:11px;font-size:15px}.pill{padding:7px 9px;font-size:12px;min-height:36px}.acts{gap:4px;flex-wrap:nowrap}}
 @media (max-width:359px){#bPrem{font-size:0;padding:7px 10px}#bPrem::before{content:"✨";font-size:15px}}
 @media (max-width:339px){.top{flex-wrap:wrap}.acts{flex-wrap:wrap}}
 /* ventanas anchas y bajas: tablet/laptop/TV horizontal y celular de lado: dos columnas */
 @media (min-aspect-ratio:1/1) and (min-width:560px){
- body:not(.proy) .app{max-width:min(100%,clamp(1180px,calc(var(--W)*.78),1800px));display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:clamp(14px,2.4vw,36px);row-gap:12px;align-items:start;padding-inline:clamp(14px,2.4vw,32px)}
+ body:not(.proy) .app{max-width:min(100%,clamp(1180px,calc(var(--W)*.78),1800px));display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:clamp(14px,2.4vw,36px);row-gap:12px;align-items:start;padding-left:clamp(14px,2.4vw,32px);padding-right:clamp(14px,2.4vw,32px)}
  body:not(.proy) .app>*{grid-column:2}
  body:not(.proy) .app>.top{grid-column:1/-1;order:-5}
  body:not(.proy) .app>.banner{grid-column:1/-1;order:-4}
@@ -167,6 +166,19 @@ body:not(.proy) .nc .grid:has(>:nth-child(5)){--c:3}
 @media (min-width:2200px) and (min-height:1200px){html:not(:has(body.proy)){zoom:1.6;--z:1.6}}
 @media (min-width:3000px) and (min-height:1800px){html:not(:has(body.proy)){zoom:2.3;--z:2.3}}
 @media (prefers-reduced-motion:reduce){.monster:not([data-s=demasiado]){animation:none}.toast,.lid,.arm,.mouth{transition-duration:.01s}}
+}
+/* ===== Compatibilidad: navegadores sin "gap" en flex (html.nfg) ===== */
+html.nfg .app>*+*{margin-top:12px}
+html.nfg .stage>*+*,html.nfg .sim>*+*{margin-top:6px}
+html.nfg .plans>*+*{margin-top:8px}
+html.nfg .ul>*+*{margin-top:7px}
+html.nfg .chip>*+*{margin-top:2px}
+html.nfg .top>*,html.nfg .acts>*,html.nfg .banner>*,html.nfg .stats>*,html.nfg .leg>*,html.nfg .tr2>*,html.nfg .row>*{margin-left:3px;margin-right:3px}
+html.nfg .leg>*{margin-top:3px;margin-bottom:3px}
+html.nfg .brand>*{margin-right:6px}
+html.nfg body.proy .app>*+*{margin-top:1.4vmin}
+html.nfg body.proy .stage>*+*{margin-top:.8vmin}
+@supports (width:min(1px,2px)){@media (min-aspect-ratio:1/1) and (min-width:560px){html.nfg body:not(.proy) .app>*+*{margin-top:0}}}
 </style></head>
 <body data-theme="light" data-scene="noche">
 <div class="app">
@@ -376,6 +388,11 @@ addEventListener("keydown",e=>{if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagN
  else if(k==="f"||k==="F"||k==="p"||k==="P"){proy(!BD.classList.contains("proy"))}
  else if(k==="Escape"){proy(false)}
  else if((k==="ArrowRight"||k==="ArrowLeft"||k==="PageDown"||k==="PageUp")&&!active){const c=$$("#tg .chip");let i=c.findIndex(x=>x.classList.contains("sel"));i=Math.max(0,Math.min(c.length-1,i+((k==="ArrowRight"||k==="PageDown")?1:-1)));c[i]&&c[i].click()}});
+/* ===== compatibilidad con navegadores antiguos ===== */
+(function(){try{var d=document.createElement("div");d.style.cssText="display:flex;flex-direction:column;row-gap:1px;position:absolute;visibility:hidden";d.appendChild(document.createElement("i"));d.appendChild(document.createElement("i"));document.body.appendChild(d);var ok=d.scrollHeight===1;document.body.removeChild(d);if(!ok)document.documentElement.classList.add("nfg")}catch(e){}})();
+function fitChips(){[["tg",360,6,3],["skins",380,5,3],["scenes",300,4,2]].forEach(function(a){var g=document.getElementById(a[0]);if(!g||!g.parentNode)return;g.style.setProperty("--c",g.parentNode.clientWidth>=a[1]?a[2]:a[3])})}
+fitChips();addEventListener("resize",fitChips);addEventListener("orientationchange",function(){setTimeout(fitChips,200)});
+if(window.ResizeObserver){var ro=new ResizeObserver(fitChips);["tg","skins","scenes"].forEach(function(i){var g=document.getElementById(i);if(g&&g.parentNode)ro.observe(g.parentNode)})}else setInterval(fitChips,1500);
 /* inicio */
 if(st.prem&&(!st.exp||Date.now()>st.exp))down();theme();$("#cn").value=st.cn;$("#sens").value=st.sens;$("#pin").value=st.pin;document.body.classList.toggle("aula",st.aula);$("#bAula").classList.toggle("on",st.aula);$("#swA").classList.toggle("on",st.aula);refresh();loop();
 })();
