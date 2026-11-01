@@ -331,19 +331,12 @@ function renderPlans(){const P=PR(),b=$("#plans");b.innerHTML="";[["A","Anual","
 function waLink(){$("#pWa").href="https://wa.me/"+WA+"?text="+encodeURIComponent("Hola, quiero activar el plan "+PN[selP]+" ("+S(PR()[selP])+") de El Monstruo Silencioso. ¿Cómo puedo pagar?")}
 $("#brand").onclick=()=>{brandN++;clearTimeout(brandT);brandT=setTimeout(()=>brandN=0,2000);if(brandN>=5){brandN=0;$("#adL").style.display="";$("#adM").style.display="none";$("#adP").value="";$("#adE").textContent="";open("#oAd")}};
 /* ===== precios compartidos =====
-   A) Con index.php (PHP / Termux: php -S 0.0.0.0:8080): se guardan en el propio servidor (precios.json). Sin pasos extra.
-   B) Con index.html en hosting estático: se guardan en jsonblob.com (se activa desde Admin). */
+   A) index.php (PHP / Termux): se guardan en el servidor (precios.json), sin pasos extra.
+   B) index.html (GitHub Pages u otro hosting estático): todos los equipos leen precios.json del mismo sitio;
+      el admin lo actualiza en tu repositorio de GitHub con un token que solo se guarda en su equipo. */
 const PHP_BUILD=false;
-const BLOB="";
 const mgGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},mgSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},mgDel=k=>{try{localStorage.removeItem(k)}catch(e){}};
-const bid=()=>BLOB||mgGet("ms_blob")||"";
-const BURL=()=>"https://jsonblob.com/api/jsonBlob/"+bid(),BH={"Content-Type":"application/json","Accept":"application/json"};
-const psig=p=>hs([p.M,p.A,p.C].join("|")+SECRET);
-const okP=d=>!!(d&&d.prices&&["M","A","C"].every(k=>d.prices[k]>0&&d.prices[k]<1e5)&&d.s===psig(d.prices));
-const cpTxt=async t=>{try{await navigator.clipboard.writeText(t)}catch(e){const a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.append(a);a.select();try{document.execCommand("copy")}catch(x){}a.remove()}toast("Copiado","Pégalo donde lo necesites")};
-const baseUrl=()=>location.href.split("#")[0].split("?")[0];
-(function(){const m=/[#&]b=([A-Za-z0-9-]{8,64})/.exec(location.hash);if(m){mgSet("ms_blob",m[1]);try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}setTimeout(()=>toast("☁️ Equipo vinculado","Verás los precios compartidos"),700)}})();
-async function publish(p){const r=await fetch(BURL(),{method:"PUT",headers:BH,body:JSON.stringify({prices:p,s:psig(p),t:Date.now()})});if(!r.ok)throw new Error("HTTP "+r.status)}
+const jpp=(s,d)=>{try{const v=JSON.parse(s);return v==null?d:v}catch(e){return d}};
 let MODE="",adKey="";
 const apiP=async b=>{const r=await fetch("?api=precios",b?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}:{cache:"no-store"});let j=null;try{j=await r.json()}catch(e){}return{s:r.status,j:j||{}}};
 function applyP(p){if(!p){if(SRV||st.srv){SRV=null;st.srv=null;save();renderPlans()}return}
@@ -351,29 +344,38 @@ function applyP(p){if(!p){if(SRV||st.srv){SRV=null;st.srv=null;save();renderPlan
 async function probe(){if(!PHP_BUILD)return false;try{const{j}=await apiP();if(j.ok&&j.srv===1){MODE="php";applyP(j.prices);return true}}catch(e){}MODE="";return false}
 async function syncP(){
  if(PHP_BUILD){if(MODE!=="php"&&!(await probe()))return;try{const{j}=await apiP();if(j.ok&&j.srv===1)applyP(j.prices)}catch(e){}return}
- if(!bid())return;try{const r=await fetch(BURL(),{headers:BH,cache:"no-store"});if(!r.ok)return;const d=await r.json();
- if(okP(d)&&(!SRV||psig(d.prices)!==psig(SRV))){SRV=d.prices;st.srv=SRV;save();renderPlans()}}catch(e){}}
-async function adopt(id){mgSet("ms_blob",id);SRV=null;st.srv=null;try{await publish(PR())}catch(e){}renderCloud();toast("☁️ Almacén activo","Copia el enlace para vincular tus otros equipos")}
-async function createBlob(){const o=$("#adSync");o.textContent="Creando…";
- try{const p=PR(),r=await fetch("https://jsonblob.com/api/jsonBlob",{method:"POST",headers:BH,body:JSON.stringify({prices:p,s:psig(p),t:Date.now()})});
-  const id=(r.headers.get("Location")||r.headers.get("X-jsonblob")||"").split("/").pop();
-  if(r.ok&&/^[A-Za-z0-9-]{8,64}$/.test(id))adopt(id);
-  else o.textContent="Tu navegador no dejó leer el ID. Abre jsonblob.com, pulsa Save y pega aquí la dirección que aparece."}
- catch(e){o.textContent="No se pudo conectar con jsonblob.com ("+String(e&&e.message||e).slice(0,50)+"). Revisa tu internet; si sigue igual usa la versión index.php."}}
-async function bake(){try{const r=await fetch(baseUrl(),{cache:"no-store"});if(!r.ok)throw 0;let h=await r.text();if(!/const BLOB="[^"]*";/.test(h))throw 0;
- h=h.replace(/const BLOB="[^"]*";/,'const BLOB="'+bid()+'";');const u=URL.createObjectURL(new Blob([h],{type:"text/html"}));const a=document.createElement("a");a.href=u;a.download="index.html";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
- toast("Archivo listo","Reemplaza tu index.html por el descargado")}catch(e){toast("No se pudo generar","Ábrelo desde tu servidor (http) o pega el ID en const BLOB del archivo")}}
-function renderCloud(){const C=$("#adCloud"),o=$("#adSync"),id=bid();C.textContent="";
+ if(location.protocol==="file:")return;
+ try{const r=await fetch("precios.json?v="+Date.now(),{cache:"no-store"});if(!r.ok)return;const d=await r.json();applyP(d&&d.prices?d.prices:d)}catch(e){}}
+/* --- GitHub: guardar precios.json en el repositorio --- */
+const ghGuess=()=>{const h=location.hostname,p=location.pathname.split("/").filter(Boolean);if(/\.github\.io$/.test(h)){const o=h.split(".")[0];return o+"/"+(p[0]&&!/\.html?$/.test(p[0])?p[0]:o+".github.io")}return""};
+const ghCfg=()=>{const c=jpp(mgGet("ms_gh"),{});return{repo:c.repo||"",branch:c.branch||"main",token:mgGet("ms_ghtok")||""}};
+async function ghSave(p){const c=ghCfg();if(!c.repo||!c.token)throw new Error("cfg");
+ const url="https://api.github.com/repos/"+c.repo+"/contents/precios.json",H={"Accept":"application/vnd.github+json","Authorization":"Bearer "+c.token};
+ for(let n=0;n<2;n++){let sha;const g=await fetch(url+"?ref="+encodeURIComponent(c.branch)+"&_="+Date.now(),{headers:H,cache:"no-store"});
+  if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw new Error("get"+g.status);
+  const body={message:"Actualizar precios",content:btoa(JSON.stringify(p)),branch:c.branch};if(sha)body.sha=sha;
+  const r=await fetch(url,{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},H),body:JSON.stringify(body)});
+  if(r.ok)return;if(r.status!==409&&r.status!==422)throw new Error("put"+r.status)}
+ throw new Error("conflicto")}
+function renderCloud(){const C=$("#adCloud"),o=$("#adSync");C.textContent="";
  if(PHP_BUILD){o.textContent=MODE==="php"?"✅ Servidor propio activo: los precios se ven en todos los equipos que abran esta dirección en menos de un minuto.":"⚠️ No hay conexión con el servidor PHP.";return}
- const btn=(t,f)=>{const b=el("button","gb",t);b.style.marginTop="8px";b.onclick=f;C.append(b)};
- if(id){o.textContent="✅ Almacén activo ("+id.slice(0,6)+"…): los precios se ven en todos los equipos vinculados en menos de un minuto.";
-  btn("🔗 Copiar enlace para vincular otro equipo",()=>cpTxt(baseUrl()+"#b="+id));
-  btn("⬇️ Descargar index.html con el almacén incluido",bake);
-  if(!BLOB)btn("Desvincular este equipo",()=>{mgDel("ms_blob");SRV=null;st.srv=null;save();renderPlans();renderCloud()})}
- else{o.textContent="Aún no hay almacén compartido: los precios solo se guardan en este equipo.";
-  btn("☁️ Crear almacén automáticamente",createBlob);
-  const i=el("input","inp");i.id="adBid";i.placeholder="…o pega aquí la dirección/ID de jsonblob.com";i.style.cssText="margin-top:8px;letter-spacing:0";C.append(i);
-  btn("Vincular con esta dirección",()=>{const m=/([A-Za-z0-9-]{8,64})\/?(?:[?#].*)?$/.exec(i.value.trim());if(m)adopt(m[1]);else toast("Dirección no válida","Pega la dirección completa de jsonblob.com")})}}
+ const btn=(t,f)=>{const b=el("button","gb",t);b.style.marginTop="8px";b.onclick=f;C.append(b)},c=ghCfg();
+ if(c.repo&&c.token){o.textContent="✅ GitHub conectado ("+c.repo+"): al guardar se actualiza precios.json y todos los equipos lo ven en 1–2 minutos.";
+  btn("Desconectar GitHub",()=>{mgDel("ms_ghtok");mgDel("ms_gh");renderCloud()});return}
+ o.textContent="Para que los precios se vean en todos los equipos, conecta tu repositorio de GitHub (una sola vez).";
+ const mk=(id,ph,val,type)=>{const i=el("input","inp");i.id=id;i.placeholder=ph;i.value=val||"";if(type)i.type=type;i.autocomplete="off";i.style.cssText="margin-top:8px;letter-spacing:0";C.append(i);return i};
+ const ir=mk("adRepo","Repositorio (usuario/nombre)",c.repo||ghGuess()),it=mk("adTok","Token de GitHub (solo se guarda en este equipo)","","password");
+ btn("Conectar GitHub",async()=>{const repo=ir.value.trim().replace(/^https?:\/\/github\.com\//,"").replace(/\.git$/,"").replace(/\/+$/,""),tok=it.value.trim();
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!tok){toast("Faltan datos","Escribe usuario/repositorio y el token");return}
+  o.textContent="Verificando…";
+  try{const r=await fetch("https://api.github.com/repos/"+repo,{headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer "+tok}});
+   if(r.status===401){o.textContent="El token no es válido o venció.";return}
+   if(!r.ok){o.textContent="No se encontró ese repositorio con ese token ("+r.status+"). Revisa el nombre y que el token tenga acceso a él.";return}
+   const j=await r.json();if(j.permissions&&j.permissions.push===false){o.textContent="El token no puede escribir. Debe tener el permiso «Contents: Read and write».";return}
+   mgSet("ms_gh",JSON.stringify({repo,branch:j.default_branch||"main"}));mgSet("ms_ghtok",tok);renderCloud();toast("✅ GitHub conectado","Ya puedes guardar precios para todos")}
+  catch(e){o.textContent="Sin conexión con GitHub. Inténtalo de nuevo."}});
+ btn("Cómo crear el token",()=>window.open("https://github.com/settings/personal-access-tokens/new","_blank","noopener"));
+ const h=el("div","fh","Token fine-grained: acceso solo a este repositorio y permiso «Contents: Read and write».");h.style.marginTop="6px";C.append(h)}
 $("#adOk").onclick=async()=>{const k=$("#adP").value,e=$("#adE");
  if(PHP_BUILD){e.textContent="Verificando…";if(MODE!=="php")await probe();
   if(MODE!=="php"){e.textContent="Sin conexión con el servidor. Abre la app desde tu servidor PHP.";return}
@@ -385,8 +387,10 @@ $("#adSave").onclick=async()=>{const p={};for(const k of["M","A","C"]){const v=p
    if(j.ok){SRV=p;st.srv=p;save();renderPlans();toast("Precios actualizados para todos",S(p.M)+" · "+S(p.A)+" · "+S(p.C))}
    else toast("No se pudo guardar",j.error==="escritura"?"El servidor no puede escribir precios.json (revisa los permisos de la carpeta)":s===403?"Clave incorrecta o sesión vencida":"Revisa el precio")}
   catch(e){toast("No se pudo guardar","Sin conexión con el servidor")}return}
- if(!bid()){st.prices=p;SRV=null;st.srv=null;save();renderPlans();toast("Guardado solo en este equipo","Crea el almacén compartido para verlo en todos");return}
- try{await publish(p);SRV=p;st.srv=p;save();renderPlans();toast("Precios actualizados para todos",S(p.M)+" · "+S(p.A)+" · "+S(p.C))}catch(e){toast("No se pudo guardar para todos","Revisa tu conexión e inténtalo de nuevo")}};
+ const c=ghCfg();
+ if(!(c.repo&&c.token)){st.prices=p;SRV=null;st.srv=null;save();renderPlans();toast("Guardado solo en este equipo","Conecta GitHub en este panel para verlo en todos");return}
+ try{await ghSave(p);SRV=p;st.srv=p;save();renderPlans();toast("Precios guardados en GitHub","Todos los equipos los verán en 1–2 minutos")}
+ catch(e){const m=String(e.message);toast("No se pudo guardar",/401/.test(m)?"El token venció o no es válido. Desconecta y conecta de nuevo":/403|404/.test(m)?"El token no tiene permiso de escritura en ese repositorio":/conflicto/.test(m)?"Otro cambio llegó al mismo tiempo. Inténtalo otra vez":"Revisa tu conexión e inténtalo de nuevo")}};
 syncP();setInterval(syncP,60000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncP()});
 $("#adGen").onclick=()=>{const p=$("#adPl").value;let r="";for(let i=0;i<5;i++)r+=AL[Math.floor(Math.random()*AL.length)];$("#adOut").textContent="MS-"+p+"-"+r+"-"+hs(p+r+SECRET)};
 $("#adCopy").onclick=()=>{try{navigator.clipboard.writeText($("#adOut").textContent);toast("Copiado","Pégalo en WhatsApp")}catch(e){}};
