@@ -340,7 +340,7 @@ const jpp=(s,d)=>{try{const v=JSON.parse(s);return v==null?d:v}catch(e){return d
 let MODE="",adKey="";
 const apiP=async b=>{const r=await fetch("?api=precios",b?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}:{cache:"no-store"});let j=null;try{j=await r.json()}catch(e){}return{s:r.status,j:j||{}}};
 function applyP(p){if(!p){if(SRV||st.srv){SRV=null;st.srv=null;save();renderPlans()}return}
- if(["M","A","C"].every(k=>p[k]>0&&p[k]<1e5)&&(!SRV||SRV.M!==+p.M||SRV.A!==+p.A||SRV.C!==+p.C)){SRV={M:+p.M,A:+p.A,C:+p.C};st.srv=SRV;save();renderPlans()}}
+ if(["M","A","C"].eveherep=>p[k]>0&&p[k]<1e5)&&(!SRV||SRV.M!==+p.M||SRV.A!==+p.A||SRV.C!==+p.C)){SRV={M:+p.M,A:+p.A,C:+p.C};st.srv=SRV;save();renderPlans()}}
 async function probe(){if(!PHP_BUILD)return false;try{const{j}=await apiP();if(j.ok&&j.srv===1){MODE="php";applyP(j.prices);return true}}catch(e){}MODE="";return false}
 async function syncP(){
  if(PHP_BUILD){if(MODE!=="php"&&!(await probe()))return;try{const{j}=await apiP();if(j.ok&&j.srv===1)applyP(j.prices)}catch(e){}return}
@@ -349,13 +349,20 @@ async function syncP(){
 /* --- GitHub: guardar precios.json en el repositorio --- */
 const ghGuess=()=>{const h=location.hostname,p=location.pathname.split("/").filter(Boolean);if(/\.github\.io$/.test(h)){const o=h.split(".")[0];return o+"/"+(p[0]&&!/\.html?$/.test(p[0])?p[0]:o+".github.io")}return""};
 const ghCfg=()=>{const c=jpp(mgGet("ms_gh"),{});return{repo:c.repo||"",branch:c.branch||"main",token:mgGet("ms_ghtok")||""}};
+async function ghErr(r,pre){let m="";try{m=(await r.json()).message||""}catch(e){}return new Error(pre+r.status+(m?"|"+m:""))}
+const ghMsg=m=>/401/.test(m)?"El token venció o no es válido. Desconecta y conecta de nuevo."
+ :/protected/i.test(m)?"La rama está protegida y no deja guardar directo. Quita la protección de esa rama en GitHub."
+ :/not accessible|403/.test(m)?"El token no tiene el permiso «Contents: Read and write» sobre este repositorio. En GitHub edita el token y actívalo."
+ :/404/.test(m)?"El token no puede ver ese repositorio. En el token elige «Only select repositories» e incluye este repositorio."
+ :/conflicto/.test(m)?"Otro cambio llegó al mismo tiempo. Inténtalo otra vez."
+ :"Revisa tu conexión e inténtalo de nuevo.";
 async function ghSave(p){const c=ghCfg();if(!c.repo||!c.token)throw new Error("cfg");
  const url="https://api.github.com/repos/"+c.repo+"/contents/precios.json",H={"Accept":"application/vnd.github+json","Authorization":"Bearer "+c.token};
  for(let n=0;n<2;n++){let sha;const g=await fetch(url+"?ref="+encodeURIComponent(c.branch)+"&_="+Date.now(),{headers:H,cache:"no-store"});
-  if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw new Error("get"+g.status);
+  if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw await ghErr(g,"get");
   const body={message:"Actualizar precios",content:btoa(JSON.stringify(p)),branch:c.branch};if(sha)body.sha=sha;
   const r=await fetch(url,{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},H),body:JSON.stringify(body)});
-  if(r.ok)return;if(r.status!==409&&r.status!==422)throw new Error("put"+r.status)}
+  if(r.ok)return;if(r.status!==409&&r.status!==422)throw await ghErr(r,"put")}
  throw new Error("conflicto")}
 function renderCloud(){const C=$("#adCloud"),o=$("#adSync");C.textContent="";
  if(PHP_BUILD){o.textContent=MODE==="php"?"✅ Servidor propio activo: los precios se ven en todos los equipos que abran esta dirección en menos de un minuto.":"⚠️ No hay conexión con el servidor PHP.";return}
@@ -372,7 +379,10 @@ function renderCloud(){const C=$("#adCloud"),o=$("#adSync");C.textContent="";
    if(r.status===401){o.textContent="El token no es válido o venció.";return}
    if(!r.ok){o.textContent="No se encontró ese repositorio con ese token ("+r.status+"). Revisa el nombre y que el token tenga acceso a él.";return}
    const j=await r.json();if(j.permissions&&j.permissions.push===false){o.textContent="El token no puede escribir. Debe tener el permiso «Contents: Read and write».";return}
-   mgSet("ms_gh",JSON.stringify({repo,branch:j.default_branch||"main"}));mgSet("ms_ghtok",tok);renderCloud();toast("✅ GitHub conectado","Ya puedes guardar precios para todos")}
+   mgSet("ms_gh",JSON.stringify({repo,branch:j.default_branch||"main"}));mgSet("ms_ghtok",tok);
+   o.textContent="Comprobando permiso de escritura…";
+   try{await ghSave(PR())}catch(er){mgDel("ms_ghtok");mgDel("ms_gh");renderCloud();$("#adSync").textContent="⚠️ "+ghMsg(String(er.message));return}
+   renderCloud();toast("✅ GitHub conectado","Precios publicados. Ya puedes guardarlos para todos")}
   catch(e){o.textContent="Sin conexión con GitHub. Inténtalo de nuevo."}});
  btn("Cómo crear el token",()=>window.open("https://github.com/settings/personal-access-tokens/new","_blank","noopener"));
  const h=el("div","fh","Token fine-grained: acceso solo a este repositorio y permiso «Contents: Read and write».");h.style.marginTop="6px";C.append(h)}
@@ -390,7 +400,7 @@ $("#adSave").onclick=async()=>{const p={};for(const k of["M","A","C"]){const v=p
  const c=ghCfg();
  if(!(c.repo&&c.token)){st.prices=p;SRV=null;st.srv=null;save();renderPlans();toast("Guardado solo en este equipo","Conecta GitHub en este panel para verlo en todos");return}
  try{await ghSave(p);SRV=p;st.srv=p;save();renderPlans();toast("Precios guardados en GitHub","Todos los equipos los verán en 1–2 minutos")}
- catch(e){const m=String(e.message);toast("No se pudo guardar",/401/.test(m)?"El token venció o no es válido. Desconecta y conecta de nuevo":/403|404/.test(m)?"El token no tiene permiso de escritura en ese repositorio":/conflicto/.test(m)?"Otro cambio llegó al mismo tiempo. Inténtalo otra vez":"Revisa tu conexión e inténtalo de nuevo")}};
+ catch(e){const m=ghMsg(String(e.message));toast("No se pudo guardar",m.slice(0,70)+(m.length>70?"…":""));$("#adSync").textContent="⚠️ "+m}};
 syncP();setInterval(syncP,60000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncP()});
 $("#adGen").onclick=()=>{const p=$("#adPl").value;let r="";for(let i=0;i<5;i++)r+=AL[Math.floor(Math.random()*AL.length)];$("#adOut").textContent="MS-"+p+"-"+r+"-"+hs(p+r+SECRET)};
 $("#adCopy").onclick=()=>{try{navigator.clipboard.writeText($("#adOut").textContent);toast("Copiado","Pégalo en WhatsApp")}catch(e){}};
