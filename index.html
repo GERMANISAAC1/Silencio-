@@ -340,7 +340,7 @@ const jpp=(s,d)=>{try{const v=JSON.parse(s);return v==null?d:v}catch(e){return d
 let MODE="",adKey="";
 const apiP=async b=>{const r=await fetch("?api=precios",b?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}:{cache:"no-store"});let j=null;try{j=await r.json()}catch(e){}return{s:r.status,j:j||{}}};
 function applyP(p){if(!p){if(SRV||st.srv){SRV=null;st.srv=null;save();renderPlans()}return}
- if(["M","A","C"].eveherep=>p[k]>0&&p[k]<1e5)&&(!SRV||SRV.M!==+p.M||SRV.A!==+p.A||SRV.C!==+p.C)){SRV={M:+p.M,A:+p.A,C:+p.C};st.srv=SRV;save();renderPlans()}}
+ if(["M","A","C"].every(k=>p[k]>0&&p[k]<1e5)&&(!SRV||SRV.M!==+p.M||SRV.A!==+p.A||SRV.C!==+p.C)){SRV={M:+p.M,A:+p.A,C:+p.C};st.srv=SRV;save();renderPlans()}}
 async function probe(){if(!PHP_BUILD)return false;try{const{j}=await apiP();if(j.ok&&j.srv===1){MODE="php";applyP(j.prices);return true}}catch(e){}MODE="";return false}
 async function syncP(){
  if(PHP_BUILD){if(MODE!=="php"&&!(await probe()))return;try{const{j}=await apiP();if(j.ok&&j.srv===1)applyP(j.prices)}catch(e){}return}
